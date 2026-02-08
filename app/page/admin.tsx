@@ -33,15 +33,16 @@ export default function AdminPage() {
         if (data.messages && data.messages.length > 0) {
           const incoming = data.messages.map((m: any) => ({
             id: m.id,
-            sender: 'oa',
+            sender: m.sender || 'oa',
             text: m.text,
             timestamp: new Date(m.timestamp)
           }));
 
           setMessages(prev => [...prev, ...incoming]);
 
-          if (!lineUserId && data.messages[0].userId) {
-            setLineUserId(data.messages[0].userId);
+          const lastUserMessage = [...data.messages].reverse().find(m => m.sender === 'oa' || !m.sender);
+          if (lastUserMessage && lastUserMessage.userId) {
+            setLineUserId(lastUserMessage.userId);
           }
         }
       } catch (error) {
@@ -51,7 +52,7 @@ export default function AdminPage() {
 
     const interval = setInterval(checkNewMessages, 3000);
     return () => clearInterval(interval);
-  }, [lineUserId]);
+  }, []);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
