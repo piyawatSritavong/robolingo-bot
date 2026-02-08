@@ -3,6 +3,21 @@ import crypto from 'crypto';
 
 let messageQueue: any[] = [];
 
+async function sendReply(replyToken: string, text: string) {
+  const response = await fetch('https://api.line.me/v2/bot/message/reply', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}`,
+    },
+    body: JSON.stringify({
+      replyToken: replyToken,
+      messages: [{ type: 'text', text: text }],
+    }),
+  });
+  return response.ok;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.text();
@@ -15,7 +30,6 @@ export async function POST(req: NextRequest) {
       .digest('base64');
 
     if (hash !== signature) {
-      console.error('[Webhook] Invalid Signature');
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
@@ -24,16 +38,25 @@ export async function POST(req: NextRequest) {
 
     for (const event of events) {
       if (event.type === 'message' && event.message.type === 'text') {
-        const incomingData = {
+        const userText = event.message.text.toLowerCase();
+        const userId = event.source.userId;
+        const replyToken = event.replyToken;
+
+        messageQueue.push({
           id: event.message.id,
-          userId: event.source.userId,
+          userId: userId,
           text: event.message.text,
           timestamp: new Date().toISOString()
-        };
-        
-        console.log(`[Webhook] New Message from ${incomingData.userId}: ${incomingData.text}`);
-        messageQueue.push(incomingData);
-        
+        });
+
+        if (userText.includes('สวัสดี') || userText.includes('hello')) {
+          await sendReply(replyToken, 'สินค้าราคา 500 บาทครับ สนใจรับกี่ชิ้นดีครับ?');
+        } else if (userText.includes('ราคา') || userText.includes('price')) {
+          await sendReply(replyToken, 'สวัสดีครับ! ยินดีต้อนรับสู่ Robolingo-BOT มีอะไรให้ช่วยไหมครับ?');
+        } else if (userText.includes('เบอร์ติดต่อ') || userText.includes('contact')) {
+          await sendReply(replyToken, 'ติดต่อเราได้ที่เบอร์ 089-xxx-xxxx ครับ');
+        }
+
         if (messageQueue.length > 50) messageQueue.shift();
       }
     }
