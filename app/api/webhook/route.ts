@@ -3,7 +3,7 @@ import crypto from 'crypto';
 
 let messageQueue: any[] = [];
 
-async function sendReply(replyToken: string, text: string) {
+async function sendReply(replyToken: string, text: string, userId: string) {
   const response = await fetch('https://api.line.me/v2/bot/message/reply', {
     method: 'POST',
     headers: {
@@ -15,6 +15,16 @@ async function sendReply(replyToken: string, text: string) {
       messages: [{ type: 'text', text: text }],
     }),
   });
+
+  if (response.ok) {
+    messageQueue.push({
+      id: `reply-${Date.now()}`,
+      userId: userId,
+      text: `[Auto-Reply]: ${text}`,
+      sender: 'user',
+      timestamp: new Date().toISOString()
+    });
+  }
   return response.ok;
 }
 
@@ -46,15 +56,16 @@ export async function POST(req: NextRequest) {
           id: event.message.id,
           userId: userId,
           text: event.message.text,
+          sender: 'oa',
           timestamp: new Date().toISOString()
         });
 
         if (userText.includes('สวัสดี') || userText.includes('hello')) {
-          await sendReply(replyToken, 'สินค้าราคา 500 บาทครับ สนใจรับกี่ชิ้นดีครับ?');
+          await sendReply(replyToken, 'สวัสดีครับ! ยินดีต้อนรับสู่ Robolingo-BOT มีอะไรให้ช่วยไหมครับ?', userId);
         } else if (userText.includes('ราคา') || userText.includes('price')) {
-          await sendReply(replyToken, 'สวัสดีครับ! ยินดีต้อนรับสู่ Robolingo-BOT มีอะไรให้ช่วยไหมครับ?');
+          await sendReply(replyToken, 'สินค้าราคา 500 บาทครับ สนใจรับกี่ชิ้นดีครับ?', userId);
         } else if (userText.includes('เบอร์ติดต่อ') || userText.includes('contact')) {
-          await sendReply(replyToken, 'ติดต่อเราได้ที่เบอร์ 089-xxx-xxxx ครับ');
+          await sendReply(replyToken, 'ติดต่อเราได้ที่เบอร์ 089-xxx-xxxx ครับ', userId);
         }
 
         if (messageQueue.length > 50) messageQueue.shift();
