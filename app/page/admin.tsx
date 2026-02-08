@@ -27,7 +27,7 @@ export default function AdminPage() {
   useEffect(() => {
     const checkNewMessages = async () => {
       try {
-        const response = await fetch('/api/line/webhook');
+        const response = await fetch('/api/webhook');
         const data = await response.json();
 
         if (data.messages && data.messages.length > 0) {
@@ -70,7 +70,7 @@ export default function AdminPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/line/push', {
+      const response = await fetch('/api/push', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to: lineUserId, message: currentText }),
