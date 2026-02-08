@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
       .digest('base64');
 
     if (hash !== signature) {
+      console.error('[Webhook] Invalid Signature');
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
@@ -23,13 +24,16 @@ export async function POST(req: NextRequest) {
 
     for (const event of events) {
       if (event.type === 'message' && event.message.type === 'text') {
-        messageQueue.push({
+        const incomingData = {
           id: event.message.id,
           userId: event.source.userId,
           text: event.message.text,
           timestamp: new Date().toISOString()
-        });
-
+        };
+        
+        console.log(`[Webhook] New Message from ${incomingData.userId}: ${incomingData.text}`);
+        messageQueue.push(incomingData);
+        
         if (messageQueue.length > 50) messageQueue.shift();
       }
     }
